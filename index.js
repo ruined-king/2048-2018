@@ -43,6 +43,7 @@ io.on('connection', function (socket) {
   let lobbyId = -1
 
   if (Object.entries(lobbies).length === 0) {
+    console.log('no games available.')
     id = uid()
     lobbyId = id
     playerIndex = 1
@@ -52,8 +53,10 @@ io.on('connection', function (socket) {
     lobbies[id].socket1.emit('player-number', 1);
     
   } else {
+    console.log('there are lobbies available.')
     for (const [lobbyId, lobby] of Object.entries(lobbies)) {
       if (lobby.player2 === -1) {
+        console.log('second player is empty.')
         playerIndex = 0
         console.log(`Player ${playerIndex} has connected`);
         lobby.player2 = 0
@@ -66,6 +69,7 @@ io.on('connection', function (socket) {
       }
     }
     if (playerIndex === -1) {
+      console.log('all games are full.')
       id = uid()
       lobbyId = id
       playerIndex = 1
@@ -76,7 +80,6 @@ io.on('connection', function (socket) {
     }
   }
 
-  console.log('lobbies: ', lobbies)
   socket.on('actuate', function (data) {
     console.log(`Actuation from ${playerIndex}`);
     console.log(data)
