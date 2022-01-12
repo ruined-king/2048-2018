@@ -47,27 +47,26 @@ io.on('connection', function (socket) {
       break
     }
   }
-  console.log('final player index:', playerIndex)
-  
-  // Tell the connecting client what player number they are
-  socket.emit('player-number', playerIndex);
-  
+
   console.log(`Player ${playerIndex} has connected`);
   // Ignore player 3
   if (playerIndex == -1) return;
+
+   // tell everyone who connected.
+   socket.broadcast.emit('player-connect', playerIndex)
   
   if (Object.entries(lobbies).length === 0) {
     id = uid()
-    lobbies.id = { "player1": playerIndex, "player2": -1, "socket1": socket, "socket2": null }
-    lobbies.id.socket1.emit('lobby-id', id)
+    lobbies[id] = { "player1": 1, "player2": -1, "socket1": socket, "socket2": null }
+    lobbies[id].socket1.emit('player-number', 1);
+    lobbies[id].socket1.emit('lobby-id', id)
   } else {
     for (const [lobbyId, lobby] of Object.entries(lobbies)) {
       if (lobby.player2 === -1) {
-        lobby.player2 = playerIndex
+        lobby.player2 = 0
         lobby.socket2 = socket
         // Tell everyone else what player number just connected
-        lobby.socket1.emit('player-connect', 2)
-        lobby.socket2.emit('player-connect', 2)
+        lobby.socket2.emit('player-number', 0)
         lobby.socket2.emit('lobby-id', id)
       }
     }
@@ -85,8 +84,8 @@ io.on('connection', function (socket) {
     };
 
     // Emit the move to all other clients
-    lobbies.lobbyId.socket1.emit('move', move);
-    lobbies.lobbyId.socket2.emit('move', move);
+    lobbies[lobbyId].socket1.emit('move', move);
+    lobbies[lobbyId].socket2.emit('move', move);
   });
 
   socket.on('disconnect', function() {
@@ -94,7 +93,7 @@ io.on('connection', function (socket) {
     connections[playerIndex] = false
     for (const [lobbyId, lobby] of Object.entries(lobbies)) {
       if (lobby.player1 === playerIndex || lobby.player2 === playerIndex) {
-        delete lobbies.lobbyId
+        delete lobbies[lobbyId]
       }
     }
     console.log('lobbies: ', lobbies)
