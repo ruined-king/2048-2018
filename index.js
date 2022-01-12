@@ -25,6 +25,8 @@ const client = redis.createClient({
   'host': '10.201.237.108', 
   'port': 6379
 })
+client.connect()
+
 client.on('connect', function () {
   console.log('Redis client connected.');
 });
