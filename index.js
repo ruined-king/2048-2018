@@ -62,7 +62,7 @@ io.on('connection', function (socket) {
     lobbies.id = { "player1": playerIndex, "player2": -1, "socket1": socket, "socket2": null }
     lobbies.id.socket1.emit('lobby-id', id)
   } else {
-    for (const [lobbyId, lobby] in Object.entries(lobbies)) {
+    for (const [lobbyId, lobby] of Object.entries(lobbies)) {
       if (lobby.player2 === -1) {
         lobby.player2 = playerIndex
         lobby.socket2 = socket
@@ -73,7 +73,7 @@ io.on('connection', function (socket) {
       }
     }
   }
-  
+  console.log('lobbies: ', lobbies)
   socket.on('actuate', function (data) {
     console.log(`Actuation from ${playerIndex}`);
 
@@ -93,7 +93,7 @@ io.on('connection', function (socket) {
   socket.on('disconnect', function() {
     console.log(`Player ${playerIndex} Disconnected`);
     connections[playerIndex] = false
-    for ([lobbyId, lobby] in Object.entries(lobbies)) {
+    for (const [lobbyId, lobby] of Object.entries(lobbies)) {
       if (lobby.player1 === playerIndex || lobby.player2 === playerIndex) {
         delete lobbies.lobbyId
       }
