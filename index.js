@@ -21,7 +21,10 @@ const socketio = require('socket.io');
 const http = require('http');
 const redis = require('redis')
 
-const client = redis.createClient()
+const client = redis.createClient({
+  'host': '10.65.177.84', 
+  'port': 6379
+})
 client.on('connect', function () {
   console.log('Redis client connected.');
 });
