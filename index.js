@@ -50,7 +50,6 @@ io.on('connection', function (socket) {
     lobbies[id] = { "player1": 1, "player2": -1, "socket1": socket, "socket2": null }
     lobbies[id].socket1.emit('lobby-id', id)
     lobbies[id].socket1.emit('player-number', 1);
-    lobbies[id].socket1.emit('player-connect', 1)
     
   } else {
     for (const [lobbyId, lobby] of Object.entries(lobbies)) {
