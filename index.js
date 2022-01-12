@@ -29,7 +29,7 @@ app.use(express.static('public')); // Serve our static assets from /public
 server.listen(3000, () => console.log('server started'));
 
 let lobbyIndex = 0 
-const connections = new Array(1000).fill(null);
+const connections = new Array(1000).fill(false);
 const lobbies = {}
 
 const uid = function(){
@@ -40,9 +40,11 @@ io.on('connection', function (socket) {
   
   // Find an available player number
   let playerIndex = -1;
-  for (const i in connections) {
-    if (i === null) {
+  for (let i = 0; i < connections.length; i++) {
+    if (connections[i] === false) {
       playerIndex = i;
+      connections[i] = true
+      break
     }
   }
   console.log('final player index:', playerIndex)
@@ -51,11 +53,10 @@ io.on('connection', function (socket) {
   socket.emit('player-number', playerIndex);
   
   console.log(`Player ${playerIndex} has connected`);
-  
+  console.log('connections: ', connections)
   // Ignore player 3
   if (playerIndex == -1) return;
   
-  connections[playerIndex] = socket;
   if (Object.entries(lobbies).length === 0) {
     id = uid()
     lobbies.id = { "player1": playerIndex, "player2": -1, "socket1": socket, "socket2": null }
@@ -91,7 +92,7 @@ io.on('connection', function (socket) {
 
   socket.on('disconnect', function() {
     console.log(`Player ${playerIndex} Disconnected`);
-    delete connections[playerIndex]
+    connections[playerIndex] = false
     for ([lobbyId, lobby] in Object.entries(lobbies)) {
       if (lobby.player1 === playerIndex || lobby.player2 === playerIndex) {
         delete lobbies.lobbyId
