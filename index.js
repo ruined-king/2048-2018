@@ -40,20 +40,14 @@ io.on('connection', function (socket) {
   
   // Find an available player number
   let playerIndex = -1;
-  for (let i = 0; i < connections.length; i++) {
-    if (connections[i] === false) {
-      playerIndex = i;
-      connections[i] = true
-      break
-    }
-  }
+  let lobbyId = -1
 
   console.log(`Player ${playerIndex} has connected`);
-  // Ignore player 3
-  if (playerIndex == -1) return;
 
   if (Object.entries(lobbies).length === 0) {
     id = uid()
+    lobbyId = id
+    playerIndex = 1
     lobbies[id] = { "player1": 1, "player2": -1, "socket1": socket, "socket2": null }
     lobbies[id].socket1.emit('lobby-id', id)
     lobbies[id].socket1.emit('player-number', 1);
@@ -61,6 +55,7 @@ io.on('connection', function (socket) {
   } else {
     for (const [lobbyId, lobby] of Object.entries(lobbies)) {
       if (lobby.player2 === -1) {
+        playerIndex = 0
         lobby.player2 = 0
         lobby.socket2 = socket
         // Tell everyone else what player number just connected
@@ -70,12 +65,13 @@ io.on('connection', function (socket) {
       }
     }
   }
+
   console.log('lobbies: ', lobbies)
   socket.on('actuate', function (data) {
     console.log(`Actuation from ${playerIndex}`);
 
     const { grid, metadata, lobbyId } = data; // Get grid and metadata properties from client
-    
+    console.log('lobbyId: ', lobbyId)
     const move = {
       playerIndex,
       grid,
@@ -89,12 +85,7 @@ io.on('connection', function (socket) {
 
   socket.on('disconnect', function() {
     console.log(`Player ${playerIndex} Disconnected`);
-    connections[playerIndex] = false
-    for (const [lobbyId, lobby] of Object.entries(lobbies)) {
-      if (lobby.player1 === playerIndex || lobby.player2 === playerIndex) {
-        delete lobbies[lobbyId]
-      }
-    }
+    delete lobbies[lobbyId]
     console.log('lobbies: ', lobbies)
   });
 
