@@ -52,22 +52,21 @@ io.on('connection', function (socket) {
   // Ignore player 3
   if (playerIndex == -1) return;
 
-   // tell everyone who connected.
-   socket.broadcast.emit('player-connect', playerIndex)
-  
   if (Object.entries(lobbies).length === 0) {
     id = uid()
     lobbies[id] = { "player1": 1, "player2": -1, "socket1": socket, "socket2": null }
-    lobbies[id].socket1.emit('player-number', 1);
     lobbies[id].socket1.emit('lobby-id', id)
+    lobbies[id].socket1.emit('player-number', 1);
+    
   } else {
     for (const [lobbyId, lobby] of Object.entries(lobbies)) {
       if (lobby.player2 === -1) {
         lobby.player2 = 0
         lobby.socket2 = socket
         // Tell everyone else what player number just connected
-        lobby.socket2.emit('player-number', 0)
         lobby.socket2.emit('lobby-id', id)
+        lobby.socket1.emit('player-connect', 0)
+        lobby.socket2.emit('player-number', 0)
       }
     }
   }
