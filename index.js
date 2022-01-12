@@ -53,7 +53,6 @@ io.on('connection', function (socket) {
   socket.emit('player-number', playerIndex);
   
   console.log(`Player ${playerIndex} has connected`);
-  console.log('connections: ', connections)
   // Ignore player 3
   if (playerIndex == -1) return;
   
@@ -98,6 +97,7 @@ io.on('connection', function (socket) {
         delete lobbies.lobbyId
       }
     }
+    console.log('lobbies: ', lobbies)
   });
 
 
