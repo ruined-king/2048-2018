@@ -42,12 +42,11 @@ io.on('connection', function (socket) {
   let playerIndex = -1;
   let lobbyId = -1
 
-  console.log(`Player ${playerIndex} has connected`);
-
   if (Object.entries(lobbies).length === 0) {
     id = uid()
     lobbyId = id
     playerIndex = 1
+    console.log(`Player ${playerIndex} has connected`);
     lobbies[id] = { "player1": 1, "player2": -1, "socket1": socket, "socket2": null }
     lobbies[id].socket1.emit('lobby-id', id)
     lobbies[id].socket1.emit('player-number', 1);
@@ -56,6 +55,7 @@ io.on('connection', function (socket) {
     for (const [lobbyId, lobby] of Object.entries(lobbies)) {
       if (lobby.player2 === -1) {
         playerIndex = 0
+        console.log(`Player ${playerIndex} has connected`);
         lobby.player2 = 0
         lobby.socket2 = socket
         // Tell everyone else what player number just connected
