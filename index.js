@@ -41,7 +41,7 @@ io.on('connection', function (socket) {
   // Find an available player number
   let playerIndex = -1;
   for (const i in connections) {
-    if (connections[i] === null) {
+    if (i === null) {
       playerIndex = i;
     }
   }
@@ -60,7 +60,6 @@ io.on('connection', function (socket) {
     id = uid()
     lobbies.id = { "player1": playerIndex, "player2": -1, "socket1": socket, "socket2": null }
     lobbies.id.socket1.emit('lobby-id', id)
-
   } else {
     for (const [lobbyId, lobby] in Object.entries(lobbies)) {
       if (lobby.player2 === -1) {
@@ -86,7 +85,8 @@ io.on('connection', function (socket) {
     };
 
     // Emit the move to all other clients
-    lobbies.emit('move', move);
+    lobbies.lobbyId.socket1.emit('move', move);
+    lobbies.lobbyId.socket2.emit('move', move);
   });
 
   socket.on('disconnect', function() {
