@@ -83,9 +83,6 @@ io.on('connection', function (socket) {
     } else {
       lobbies[lobbyId].socket1.emit('move', move);
     }
-    // Emit the move to all other clients
-    lobbies[lobbyId].socket1.emit('move', move);
-    lobbies[lobbyId].socket2.emit('move', move);
   });
 
   socket.on('disconnect', function() {
