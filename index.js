@@ -19,6 +19,18 @@
 const express = require('express');
 const socketio = require('socket.io');
 const http = require('http');
+const redis = require('redis')
+
+const client = redis.createClient()
+client.on('connect', function () {
+  console.log('Redis client connected.');
+});
+
+client.on('error', function (err) {
+  console.log('Redis client error: ' + err);
+});
+
+const sockets = {}
 
 const app = express();
 const server = http.Server(app);
@@ -28,44 +40,56 @@ app.use(express.static('public')); // Serve our static assets from /public
 
 server.listen(3000, () => console.log('server started'));
 
-let lobbyIndex = 0 
-const connections = new Array(1000).fill(false);
-const lobbies = {}
+var OBJECT = Object.prototype;
+OBJECT.rhash = {};
+OBJECT.rset = function(id, object) {
+  OBJECT.rhash[id] = object;
+  return id;
+};
+OBJECT.rget = function(id) {
+  return OBJECT.rhash[id];
+};
 
 const uid = function(){
   return Date.now().toString(36) + Math.random().toString(36).substr(2);
 }
 // Handle a socket connection request from web client
-io.on('connection', function (socket) {
+io.on('connection', async function (socket) {
   
   // Find an available player number
   let playerIndex = -1;
   let lobbyId = -1
 
-  if (Object.entries(lobbies).length === 0) {
+  if ((await client.lLen('lobbies')) === 0) {
     console.log('no games available.')
     id = uid()
     lobbyId = id
     playerIndex = 1
     console.log(`Player ${playerIndex} has connected`);
-    lobbies[id] = { "player1": 1, "player2": -1, "socket1": socket, "socket2": null }
-    lobbies[id].socket1.emit('lobby-id', id)
-    lobbies[id].socket1.emit('player-number', 1);
+    
+    sockets[socket.id] = socket
+    await client.hSet('lobbies', lobbyId, JSON.stringify({ "player1": 1, "player2": -1, "socket1": socket.id, "socket2": null }) )
+
+    sockets[socket.id].emit('lobby-id', id)
+    sockets[socket.id].emit('player-number', 1);
     
   } else {
     console.log('there are lobbies available.')
+    lobbies = JSON.parse(await client.hGetAll('lobbies'))
+
     for (const [lobbyId, lobby] of Object.entries(lobbies)) {
       if (lobby.player2 === -1) {
         console.log('second player is empty.')
         playerIndex = 0
         console.log(`Player ${playerIndex} has connected`);
         lobby.player2 = 0
-        lobby.socket2 = socket
+        sockets[socket.id] = socket
+        lobby.socket2 = socket.id
         // Tell everyone else what player number just connected
-        lobby.socket2.emit('lobby-id', lobbyId)
-        lobby.socket2.emit('player-number', 0)
-        lobby.socket1.emit('player-connect', 0)
-        lobby.socket2.emit('player-connect', 0)
+        sockets[lobby.socket2].emit('lobby-id', lobbyId)
+        sockets[lobby.socket2].emit('player-number', 0)
+        sockets[lobby.socket1].emit('player-connect', 0)
+        sockets[lobby.socket2].emit('player-connect', 0)
       }
     }
     if (playerIndex === -1) {
@@ -74,13 +98,15 @@ io.on('connection', function (socket) {
       lobbyId = id
       playerIndex = 1
       console.log(`Player ${playerIndex} has connected`);
-      lobbies[id] = { "player1": 1, "player2": -1, "socket1": socket, "socket2": null }
-      lobbies[id].socket1.emit('lobby-id', id)
-      lobbies[id].socket1.emit('player-number', 1);
+      sockets[socket.id] = socket
+      await client.hSet('lobbies', lobbyId, JSON.stringify({ "player1": 1, "player2": -1, "socket1": socket.id, "socket2": null }) )
+
+      sockets[socket.id].emit('lobby-id', id)
+      sockets[socket.id].emit('player-number', 1);
     }
   }
 
-  socket.on('actuate', function (data) {
+  socket.on('actuate', async function (data) {
     console.log(`Actuation from ${playerIndex}`);
     console.log(data)
     const { grid, metadata, lobbyId } = data; // Get grid and metadata properties from client
@@ -90,16 +116,27 @@ io.on('connection', function (socket) {
       grid,
       metadata,
     };
-    if (lobbies[lobbyId].player1 == playerIndex) {
-      lobbies[lobbyId].socket2.emit('move', move);
+    const lobby = JSON.partse(await client.hGet('lobbies', lobbyId))
+    if (lobby.player1 == playerIndex) {
+      sockets[lobby.socket2].emit('move', move);
     } else {
-      lobbies[lobbyId].socket1.emit('move', move);
+      sockets[lobby.socket1].emit('move', move);
     }
   });
 
-  socket.on('disconnect', function() {
+  socket.on('disconnect', async function() {
     console.log(`Player ${playerIndex} Disconnected`);
-    delete lobbies[lobbyId]
+    lobby = JSON.parse(await client.hGet('lobbies', lobbyId))
+    if (lobby) {
+      if (lobby.player1 == playerIndex) {
+        delete sockets[lobby.socket1]
+        sockets[lobby.socket2].emit('end');
+      } else {
+        delete sockets[lobby.socket2]
+        sockets[lobby.socket1].emit('end');
+      }
+    }
+    await client.hDel('lobbies', lobbyId)
     console.log('lobbies: ', lobbies)
   });
 
