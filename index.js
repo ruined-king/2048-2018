@@ -78,7 +78,11 @@ io.on('connection', function (socket) {
       grid,
       metadata,
     };
-
+    if (lobbies[lobbyId].player1 == playerIndex) {
+      lobbies[lobbyId].socket2.emit('move', move);
+    } else {
+      lobbies[lobbyId].socket1.emit('move', move);
+    }
     // Emit the move to all other clients
     lobbies[lobbyId].socket1.emit('move', move);
     lobbies[lobbyId].socket2.emit('move', move);
