@@ -69,7 +69,7 @@ io.on('connection', function (socket) {
   console.log('lobbies: ', lobbies)
   socket.on('actuate', function (data) {
     console.log(`Actuation from ${playerIndex}`);
-
+    console.log(data)
     const { grid, metadata, lobbyId } = data; // Get grid and metadata properties from client
     console.log('lobbyId: ', lobbyId)
     const move = {
