@@ -62,6 +62,7 @@ io.on('connection', function (socket) {
         lobby.socket2.emit('lobby-id', lobbyId)
         lobby.socket2.emit('player-number', 0)
         lobby.socket1.emit('player-connect', 0)
+        lobby.socket2.emit('player-connect', 0)
       }
     }
   }
