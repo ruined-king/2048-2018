@@ -65,6 +65,15 @@ io.on('connection', function (socket) {
         lobby.socket2.emit('player-connect', 0)
       }
     }
+    if (playerIndex === -1) {
+      id = uid()
+      lobbyId = id
+      playerIndex = 1
+      console.log(`Player ${playerIndex} has connected`);
+      lobbies[id] = { "player1": 1, "player2": -1, "socket1": socket, "socket2": null }
+      lobbies[id].socket1.emit('lobby-id', id)
+      lobbies[id].socket1.emit('player-number', 1);
+    }
   }
 
   console.log('lobbies: ', lobbies)
