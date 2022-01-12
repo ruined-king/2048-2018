@@ -59,7 +59,7 @@ io.on('connection', function (socket) {
         lobby.player2 = 0
         lobby.socket2 = socket
         // Tell everyone else what player number just connected
-        lobby.socket2.emit('lobby-id', id)
+        lobby.socket2.emit('lobby-id', lobbyId)
         lobby.socket1.emit('player-connect', 0)
         lobby.socket2.emit('player-number', 0)
       }
